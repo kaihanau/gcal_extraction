@@ -1,27 +1,28 @@
-# Google Calendar Events Collector
+# Google Calendar Events Fetcher
 
-A Python utility for fetching events from multiple Google Calendars and storing them in a PostgreSQL database.
+A lightweight Python utility for fetching events from multiple Google Calendars and exporting them as a pandas DataFrame.
 
 ## Overview
 
-This tool automates the process of:
-1. Authenticating with Google Calendar API
-2. Fetching events from multiple Google Calendars
-3. Formatting and processing the data
-4. Storing the events in a PostgreSQL database
+This tool provides a simpler implementation to:
+1. Authenticate with Google Calendar API
+2. Fetch events from multiple Google Calendars
+3. Format the data into a pandas DataFrame for further analysis
 
 ## Features
 
 - OAuth 2.0 authentication with Google APIs
-- Pagination support for retrieving large numbers of events
-- Handles multiple calendar sources
-- Safe datetime parsing for different format types
-- Efficient batch database insertions
+- Support for retrieving events from multiple calendars
+- Pagination for handling large numbers of events
+- Comprehensive event data including:
+  - Event ID and summary
+  - Start and end times
+  - Guest information
+  - Creation timestamp
 
 ## Requirements
 
 - Python 3.6+
-- PostgreSQL database
 - Google Cloud Platform project with Calendar API enabled
 
 ## Dependencies
@@ -31,7 +32,6 @@ google-auth
 google-auth-oauthlib
 google-api-python-client
 pandas
-psycopg2
 ```
 
 ## Setup
@@ -45,8 +45,6 @@ psycopg2
    - Enable the Google Calendar API
    - Create OAuth 2.0 credentials
    - Download the credentials JSON file and save it as `credentials.json` in the project directory
-
-4. Configure your database connection parameters in the script (replace placeholders)
 
 ### Domain-Wide Delegation Setup (for accessing multiple calendars)
 
@@ -74,9 +72,10 @@ Note: This step requires administrative privileges for your Google Workspace dom
 1. First-time use will prompt for Google authentication in your browser
 2. Run the script:
    ```
-   python calendar_collector.py
+   python calendar_fetcher.py
    ```
-3. Events from the specified calendars will be fetched and stored in your database
+3. Events from the specified calendars will be fetched and displayed
+4. The script returns a pandas DataFrame that can be used for further analysis or export
 
 ## Configuration
 
@@ -94,26 +93,20 @@ The code supports two authentication approaches:
 
 If using domain-wide delegation, you'll need to modify the authentication code to use the service account credentials instead of the user OAuth flow.
 
-## Database Schema
+## Extending the Script
 
-The script inserts data into a table with the following structure:
-
-```sql
-CREATE TABLE google_calendar.calendar_events (
-    id TEXT PRIMARY KEY,
-    calendar_id TEXT,
-    summary TEXT,
-    start_time TIMESTAMP,
-    end_time TIMESTAMP,
-    guests TEXT,
-    created_at TIMESTAMP
-);
-```
+This script provides a foundation that can be easily extended to:
+- Export data to CSV, Excel, or other formats
+- Perform analytics on meeting patterns
+- Connect to databases for persistent storage
+- Create visualizations of calendar usage
 
 ## Security Note
 
 - The code uses OAuth 2.0 for secure authentication
 - You'll need to securely manage your `credentials.json` file and the generated `token.pickle`
-- Never share these authentication files or database credentials
+- Never share these authentication files publicly
 
 
+
+[MIT License](LICENSE)
