@@ -116,6 +116,4 @@ CREATE TABLE google_calendar.calendar_events (
 - You'll need to securely manage your `credentials.json` file and the generated `token.pickle`
 - Never share these authentication files or database credentials
 
-## License
 
-[MIT License](LICENSE)
