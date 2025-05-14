@@ -1,12 +1,9 @@
 import os
 import pickle
 import pandas as pd
-import psycopg2
 from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
-from psycopg2.extras import execute_batch
-from datetime import datetime
 
 # Define the scope for accessing Google Calendar data (read-only access)
 SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
@@ -127,101 +124,13 @@ def fetch_calendar_data():
     df = get_events_from_multiple_calendars(service, calendar_ids)
     return df
 
-# Function to parse datetime strings that could be in various formats
-def parse_datetime_safely(dt_str):
-    """
-    Safely parse datetime strings that could be in different formats.
-    Handles both full ISO format with time and date-only format.
-    """
-    if not dt_str:
-        return None
-    
-    try:
-        # Check if it's a date-only string (YYYY-MM-DD)
-        if len(dt_str) == 10 and dt_str[4] == '-' and dt_str[7] == '-':
-            return datetime.strptime(dt_str, '%Y-%m-%d')
-        
-        # For full ISO format with timezone
-        return pd.to_datetime(dt_str)
-    except Exception as e:
-        print(f"Warning: Could not parse datetime '{dt_str}': {e}")
-        return None
-
-# Function to insert DataFrame rows into PostgreSQL
-def insert_df_to_postgres(df):
-    """
-    Inserts the DataFrame rows into the PostgreSQL table.
-    """
-    # Database connection parameters
-    host = "your-db-host.example.com"
-    port = 5432
-    database = "your_database_name"
-    user = "your_username"
-    password = "your_password"
-    
-    try:
-        # Establish connection to PostgreSQL
-        conn = psycopg2.connect(
-            host=host,
-            port=port,
-            database=database,
-            user=user,
-            password=password
-        )
-        print("✅ Connected successfully!")
-        
-        # Create a cursor
-        cur = conn.cursor()
-        
-        # Prepare the data for insertion
-        # Make sure column names match between DataFrame and PostgreSQL table
-        insert_query = '''
-        INSERT INTO google_calendar.calendar_events 
-        (id, calendar_id, summary, start_time, end_time, guests, created_at)
-        VALUES (%s, %s, %s, %s, %s, %s, %s)
-        '''
-        
-        # Convert DataFrame to list of tuples for batch insertion
-        data_tuples = []
-        for _, row in df.iterrows():
-            # Parse the datetime strings safely
-            start_time = parse_datetime_safely(row['Start Time'])
-            end_time = parse_datetime_safely(row['End Time'])
-            created_at = parse_datetime_safely(row['Created At']) if pd.notna(row['Created At']) else None
-            
-            data_tuples.append((
-                row['ID'],
-                row['Calendar ID'],
-                row['Summary'],
-                start_time,
-                end_time,
-                row['Guests'],
-                created_at
-            ))
-        
-        # Use execute_batch for efficient insertion of multiple rows
-        execute_batch(cur, insert_query, data_tuples, page_size=100)
-        
-        # Commit the transaction
-        conn.commit()
-        print(f"✅ Successfully inserted {len(data_tuples)} rows into the database!")
-        
-        # Close cursor and connection
-        cur.close()
-        conn.close()
-        
-    except Exception as e:
-        print(f"❌ Database operation failed: {e}")
-
-# Now let's fetch the data and insert it into PostgreSQL
+# Now you can call the function to get event data as a DataFrame
 if __name__ == '__main__':
-    # Fetch calendar data
-    df = fetch_calendar_data()
+    df = fetch_calendar_data()  # This will return the DataFrame, and you can access it outside the function
     
-    # Print preview of the DataFrame
-    print("Preview of the DataFrame:")
-    print(df.head())
-    print(f"Total rows: {len(df)}")
+    # Convert the 'Created At' column to datetime objects for easier handling if needed
+    if 'Created At' in df.columns:
+        df['Created At'] = pd.to_datetime(df['Created At'])
     
-    # Insert the data into PostgreSQL
-    insert_df_to_postgres(df)
+    # Print the DataFrame to view the fetched events
+    print(df)
